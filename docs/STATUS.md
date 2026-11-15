@@ -17,17 +17,26 @@
 | QR encoder (Kotlin, for web) decodes in ZXing for versions 1–40 at full capacity | QrTest |
 | CLI: compile, info, dis, qr, hex, push, train, sizes; runs on Java 8 | manual runs |
 | Android APK builds (compileSdk 37, minSdk 26) and launches on SM-S926B (Android API 37), NFC on, no crash | adb install + logcat crash buffer empty + screenshot |
+| Real NTAG213 write + read + play on the S24+ | logcat `cc=e1101200` / `wrote 54 B (21 pages changed) to NTAG213, verified` (0.34 s), then a read opened Lights and it was played (screenshot, score 5) |
 
 Current shipped cart sizes (bytes): lights 54, meteor 65, duel 70, flap 71, echo 81, serpent 84,
 dash 92 (NFC, cap 144); mines 254, stackfall 272, brickfall 344, crates 350, depths 403 (QR, cap 2953).
 
 ## Not verified yet (do not claim these work)
-- Writing/reading the real NTAG213 from the app (needs the user to hold the tag).
+- Only Lights (54 B) was written so far; a full 140+ B cart on the tag is not tested yet.
 - QR scanning on the phone (CameraX + ZXing), QR share.
 - TECH_DISCOVERED auto-launch when the app is closed (INFERRED to work for raw NTAG tags).
 - Gameplay quality: games were only smoke-tested with random input, never played by a human.
   Crates levels are proven solvable by `tools/crate_solver.py`, but the in-VM level loader is untested with real moves.
 - Sound, haptics, editor UX on device.
+
+## Device findings
+- The S24+ reports NTAG213 tags as **NfcA + Ndef only** (no `MifareUltralight` class), so `TagIo` sends raw
+  Type 2 commands over NfcA (READ 0x30, WRITE 0xA2) and only to tags with SAK 0x00.
+- GET_VERSION (0x60) failed on this phone and the following read lost the tag; it is now only sent when the
+  capability container is missing. Size comes from CC byte 2 (0x12 x 8 = 144).
+- The user's tag previously held an https URL record; it was overwritten by the first game write (user's choice).
+- `nfc_tech.xml` now filters on NfcA alone (INFERRED: the app may appear in the chooser for other NfcA tags when closed).
 
 ## Known gaps
 - Website (landing, playground, docs) not started. GitHub repo, CI, release, deploy not started.
