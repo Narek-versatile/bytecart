@@ -123,6 +123,9 @@ class MainActivity : ComponentActivity() {
             val msg = try {
                 val info = TagIo.write(tag, job.image)
                 "Done. \"${job.title}\" is on your ${info.kind}: ${job.image.size} of ${info.capacity} bytes used, verified."
+            } catch (e: android.nfc.TagLostException) {
+                Log.w("ByteCart", "write failed", e)
+                "The tag moved away during the write. Close this, tap Write tag again and hold still; pages already written are skipped."
             } catch (e: IOException) {
                 Log.w("ByteCart", "write failed", e)
                 e.message ?: "Write failed. Hold the tag still and try again."
@@ -138,7 +141,9 @@ class MainActivity : ComponentActivity() {
             runOnUiThread { openImage(r.image, r.info.kind) }
         } catch (e: Exception) {
             Log.w("ByteCart", "read failed", e)
-            runOnUiThread { status = "Could not read the tag: ${e.message}" }
+            val msg = if (e is android.nfc.TagLostException) "The tag moved away while reading. Hold it flat against the back of the phone for a second."
+                else "Could not read the tag: ${e.message}"
+            runOnUiThread { status = msg }
         }
     }
 
