@@ -1,0 +1,88 @@
+// @name Brickfall
+// @desc Bounce the ball into the bricks. Drag your finger or hold left/right to move the paddle, tap to launch. Five stages, three lives.
+// @medium qr
+grid(16, 24)
+// 5 stages x 6 rows of 16 bits (hi byte, lo byte)
+data LV = [0xFF,0xFF, 0xFF,0xFF, 0xFF,0xFF, 0xFF,0xFF, 0,0, 0,0,
+           0xAA,0xAA, 0x55,0x55, 0xAA,0xAA, 0x55,0x55, 0xAA,0xAA, 0x55,0x55,
+           0x01,0x80, 0x03,0xC0, 0x07,0xE0, 0x0F,0xF0, 0x1F,0xF8, 0x3F,0xFC,
+           0xFF,0xFF, 0x80,0x01, 0x8F,0xF1, 0x8F,0xF1, 0x80,0x01, 0xFF,0xFF,
+           0xCC,0xCC, 0xCC,0xCC, 0x33,0x33, 0x33,0x33, 0xFF,0xFF, 0xFF,0xFF]
+data RC = [RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE]
+const PY = 22
+var lv = 0, lives = 3, bx = 0, by = 0, vx = 0, vy = 0, pad = 6, pw = 4, go = 0, left = 0, sp = 18
+
+fn hud() {
+  fill(0, 0, 16, 1, 0)
+  fill(0, 0, lives, 1, HEART)
+  text(11, 0, "ST")
+  num(14, 0, lv + 1)
+}
+fn build() {
+  cls(0)
+  fill(0, 1, 16, 1, WALL)
+  left = 0
+  for r in 0..6 {
+    var bits = LV[lv * 12 + r * 2] * 256 + LV[lv * 12 + r * 2 + 1]
+    for c in 0..16 {
+      if (bits >> (15 - c)) & 1 { set(c, r + 4, RC[r]); left++ }
+    }
+  }
+  sp = 18 + lv * 2
+  go = 0
+  hud()
+}
+fn paddle(t) { fill(pad, PY, pw, 1, t) }
+fn brick(x, y) {
+  var c = get(x, y)
+  if c > 1 && c < 16 {
+    set(x, y, 0)
+    score += 10
+    left--
+    beep(30 + y, 3)
+  }
+  return c != 0
+}
+
+build()
+loop {
+  paddle(0)
+  if touchx >= 0 { pad = touchx - pw / 2 }
+  else if tick % 2 == 0 {
+    if held(LEFT) { pad-- }
+    if held(RIGHT) { pad++ }
+  }
+  pad = clamp(pad, 0, 16 - pw)
+  paddle(WHITE)
+  if !go {
+    bx = pad * 64 + pw * 32
+    by = PY * 64 - 8
+    if tapped() || pressed(A) || pressed(UP) { go = 1; vx = sp / 2; vy = -sp; sfx(2) }
+  } else {
+    var nx = bx + vx
+    if brick(nx >> 6, by >> 6) { vx = -vx } else { bx = nx }
+    var ny = by + vy
+    if ny >> 6 >= 24 {
+      lives--
+      sfx(5)
+      go = 0
+      hud()
+      if lives == 0 { spr(0, 0, 0, 0); over() }
+    } else if ny >> 6 == PY && get(bx >> 6, PY) == WHITE && vy > 0 {
+      vy = -abs(vy)
+      vx = clamp((bx - pad * 64 - pw * 32) / 5, -sp, sp)
+      if abs(vx) < 3 { vx = 3 }
+      sfx(7)
+    } else if brick(bx >> 6, ny >> 6) { vy = -vy } else { by = ny }
+    if left == 0 {
+      score += 100 * lives
+      lv++
+      if lv == 5 { win() }
+      sfx(6)
+      wait(30)
+      build()
+    }
+  }
+  spr(0, BALL, (bx >> 3) - 4, (by >> 3) - 4)
+  frame()
+}

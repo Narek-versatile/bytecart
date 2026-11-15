@@ -1,0 +1,24 @@
+// @name Lights
+// @desc Tap a cell to flip it and its neighbours. Switch every light off in as few moves as you can.
+// @medium nfc
+grid(5, 5)
+fn t(x, y) {
+  if inside(x, y) { set(x, y, get(x, y) ^ YELLOW) }
+}
+fn flip(x, y) {
+  t(x, y)
+  t(x + 1, y)
+  t(x - 1, y)
+  t(x, y + 1)
+  t(x, y - 1)
+}
+for i in 0..12 { flip(rnd(5), rnd(5)) }
+loop {
+  frame()
+  if tapped() {
+    flip(tapx, tapy)
+    score++
+    sfx(7)
+    if count(YELLOW) == 0 { win() }
+  }
+}

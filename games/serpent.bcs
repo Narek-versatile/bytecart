@@ -1,0 +1,29 @@
+// @name Serpent
+// @desc Swipe to steer. Eat apples, grow longer, never bite yourself.
+// @medium nfc
+fill(0, 0, 16, 16, WALL)
+fill(1, 1, 14, 14, 0)
+var p = 136, h = 0, t = 0, g = 2, d = 0
+seti(rndempty(), APPLE)
+loop {
+  if (dir + 2) % 4 != d { d = dir }
+  seti(p, BODY)
+  p += xy(dx(d), dy(d))
+  var c = geti(p)
+  if c != 0 && c != APPLE { over() }
+  seti(p, HEAD)
+  mem[h] = p
+  h++
+  if c == APPLE {
+    score++
+    g += 2
+    sfx(0)
+    seti(rndempty(), APPLE)
+  } else if g > 0 {
+    g--
+  } else {
+    seti(mem[t], 0)
+    t++
+  }
+  wait(max(2, 6 - score / 4))
+}

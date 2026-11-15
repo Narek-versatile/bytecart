@@ -1,0 +1,80 @@
+// @name Mines
+// @desc Clear the field without touching a mine. Tap to dig; numbers count the mines around a cell. Press A or B to switch between digging and flagging.
+// @medium qr
+grid(10, 14)
+const N = 18
+var first = 1, left = 140 - N, flag = 0
+cls(BLOCK)
+fn mine(x, y) {
+  if inside(x, y) { return mem[xy(x, y)] }
+  return 0
+}
+fn near(x, y) {
+  var n = 0
+  for a in 0..3 {
+    for b in 0..3 { n += mine(x + a - 1, y + b - 1) }
+  }
+  return n
+}
+fn plant(sx, sy) {
+  var k = 0
+  while k < N {
+    var x = rnd(10), y = rnd(14)
+    if !mine(x, y) && (abs(x - sx) > 1 || abs(y - sy) > 1) { mem[xy(x, y)] = 1; k++ }
+  }
+}
+// breadth-first reveal using mem[1000..] as the queue
+fn dig(x0, y0) {
+  var head = 1000, tail = 1000
+  mem[tail] = xy(x0, y0)
+  tail++
+  set(x0, y0, 0)
+  while head < tail {
+    var i = mem[head]
+    head++
+    var x = px(i), y = py(i), n = near(x, y)
+    left--
+    score++
+    if n > 0 { set(x, y, '0' + n + GLYPH) }
+    else {
+      for a in 0..3 {
+        for b in 0..3 {
+          var nx = x + a - 1, ny = y + b - 1
+          if inside(nx, ny) && get(nx, ny) == BLOCK {
+            set(nx, ny, 0)
+            mem[tail] = xy(nx, ny)
+            tail++
+          }
+        }
+      }
+    }
+  }
+}
+loop {
+  frame()
+  if pressed(A) || pressed(B) {
+    flag = !flag
+    if flag { msg("FLAG MODE") } else { msg(-1) }
+    wait(20)
+    msg(-1)
+  }
+  if tapped() {
+    var x = tapx, y = tapy, c = get(x, y)
+    if flag {
+      if c == BLOCK { set(x, y, FLAG) } else if c == FLAG { set(x, y, BLOCK) }
+      sfx(7)
+    } else if c == BLOCK {
+      if first { plant(x, y); first = 0 }
+      if mine(x, y) {
+        for i in 0..140 { if mem[i] { seti(i, BOMB) } }
+        set(x, y, FIRE)
+        sfx(3)
+        over()
+      } else {
+        dig(x, y)
+        sfx(0)
+        if left == 0 { win() }
+      }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+// @name Dash
+// @desc Tap to jump the cacti. Double the speed, double the panic.
+// @medium nfc
+grid(16, 8)
+fill(0, 7, 16, 1, GRASS)
+var y = 0, v = 0, s = 4, o = 6
+loop {
+  set(2, 6 - y / 8, 0)
+  if (tapped() || pressed(A) || pressed(UP)) && y == 0 { v = 13; sfx(2) }
+  y = max(0, y + v)
+  v -= 2
+  if tick % s == 0 {
+    scroll(LEFT, 0)
+    set(15, 7, GRASS)
+    o--
+    if o < 0 && rnd(3) == 0 { set(15, 6, CACTUS); o = 4 + rnd(4) }
+    if get(1, 6) == CACTUS { score++; if score % 10 == 0 && s > 1 { s-- } }
+  }
+  if get(2, 6 - y / 8) != 0 { over() }
+  set(2, 6 - y / 8, PLAYER)
+  frame()
+}

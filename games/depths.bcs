@@ -1,0 +1,112 @@
+// @name Depths
+// @desc Roguelike dungeon crawl. Swipe to move, walk into monsters to fight. Grab potions, swords and gold, find the stairs, go deeper. Every floor is new.
+// @medium qr
+grid(16, 17)
+var hx = 0, hy = 0, hp = 12, top = 12, atk = 1, depth = 1, gold = 0
+
+fn hud() {
+  fill(0, 0, 16, 1, DARK)
+  set(0, 0, HEART)
+  num(1, 0, hp)
+  set(4, 0, SWORD)
+  num(5, 0, atk)
+  set(8, 0, COIN)
+  num(9, 0, gold)
+  set(13, 0, STAIRS)
+  num(14, 0, depth)
+}
+fn put(t, n) {
+  for i in 0..n {
+    var c = rndempty()
+    if c >= 0 {
+      seti(c, t)
+      if t == GHOST { mem[c] = 2 + depth / 3 }
+      if t == SKULL { mem[c] = 4 + depth / 2 }
+    }
+  }
+}
+fn level() {
+  fill(0, 1, 16, 16, WALL)
+  var x = 8, y = 9
+  for i in 0..(190 + depth * 12) {
+    set(x, y, 0)
+    var d = rnd(4)
+    x = clamp(x + dx(d), 1, 14)
+    y = clamp(y + dy(d), 2, 15)
+  }
+  set(x, y, STAIRS)
+  hx = 8
+  hy = 9
+  set(hx, hy, PLAYER)
+  hud()
+  put(GHOST, 2 + depth)
+  put(SKULL, depth / 2)
+  put(COIN, 4)
+  put(POTION, 1 + rnd(2))
+  if rnd(3) == 0 { put(SWORD, 1) }
+}
+fn monster(t) { return t == GHOST || t == SKULL }
+// one monster at x,y takes its turn; moved monsters are marked DIM so they act once
+fn think(x, y) {
+  var t = get(x, y)
+  var ddx = hx - x, ddy = hy - y
+  if abs(ddx) + abs(ddy) > 7 { return }
+  var sx = sgn(ddx), sy = sgn(ddy)
+  if abs(ddx) < abs(ddy) || abs(ddx) == abs(ddy) && rnd(2) { sx = 0 } else { sy = 0 }
+  var tx = x + sx, ty = y + sy
+  if tx == hx && ty == hy {
+    var dmg = t == SKULL ? 2 + depth / 3 : 1 + depth / 4
+    hp -= dmg
+    sfx(1)
+    return
+  }
+  if get(tx, ty) == 0 {
+    set(x, y, 0)
+    set(tx, ty, t + DIM)
+    mem[xy(tx, ty)] = mem[xy(x, y)]
+  }
+}
+
+level()
+loop {
+  frame()
+  var d = -1
+  for k in 0..4 { if pressed(k) { d = k } }
+  if d >= 0 {
+    var tx = hx + dx(d), ty = hy + dy(d), c = get(tx, ty)
+    if monster(c) {
+      var i = xy(tx, ty)
+      mem[i] -= atk
+      beep(20, 3)
+      if mem[i] <= 0 {
+        set(tx, ty, 0)
+        score += c == SKULL ? 25 : 10
+        sfx(3)
+      }
+    } else if c != WALL {
+      if c == COIN { gold++; score += 5; sfx(0) }
+      if c == POTION { hp = min(hp + 5, top); top++; sfx(4) }
+      if c == SWORD { atk++; sfx(4) }
+      set(hx, hy, 0)
+      hx = tx
+      hy = ty
+      if c == STAIRS {
+        depth++
+        score += 50
+        sfx(6)
+        level()
+        continue
+      }
+      set(hx, hy, PLAYER)
+    }
+    for y in 1..17 {
+      for x in 0..16 {
+        if monster(get(x, y)) { think(x, y) }
+      }
+    }
+    replace(GHOST + DIM, GHOST)
+    replace(SKULL + DIM, SKULL)
+    hud()
+    if hp <= 0 { set(hx, hy, SKULL); over() }
+  }
+}

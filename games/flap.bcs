@@ -1,0 +1,23 @@
+// @name Flap
+// @desc Tap to flap through the gaps. Touching a pipe, the ground or the sky ends the run.
+// @medium nfc
+var y = 64, v = 0, b = 8
+loop {
+  set(3, b, 0)
+  if tapped() || pressed(A) || pressed(UP) { v = -9; sfx(2) }
+  v = min(v + 1, 8)
+  y += v
+  if tick % 3 == 0 {
+    scroll(LEFT, 0)
+    if get(2, 0) == GREEN { score++ }
+    if tick % 21 == 0 {
+      var g = rnd(9) + 2
+      fill(15, 0, 1, g, GREEN)
+      fill(15, g + 5, 1, 16, GREEN)
+    }
+  }
+  b = y / 8
+  if get(3, b) != 0 { over() }
+  set(3, b, BIRD)
+  frame()
+}

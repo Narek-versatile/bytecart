@@ -1,0 +1,80 @@
+// @name Crates
+// @desc Push every crate onto a target. You can push but never pull. Swipe or D-pad to walk, B restarts the level. Eight hand-made levels.
+// @medium qr
+grid(10, 10)
+// levels: rows split by '|', levels end with '!'
+data LV = ["#####|#@$.#|#####!",
+           "  ####|###  #|#.$  #|#.$@ #|###  #|  ####!",
+           "#######|#  .  #|# #$# #|#@ $ .#|#  #  #|#######!",
+           "######|#.   #|#@$$ #|#.   #|######!",
+           "#######|#.  ..#|# $$  #|##@ $ #| # $  #| # .###| ####!",
+           "  #####|###   #|#. $# #|#.$@  #|#. $ ##|######!",
+           "########|#  .   #|# $##$ #|#  @   #|# $##$ #|#  .  .#|###   .#|  ######!",
+           "#########|#   #   #|# $ . $ #|#.##@##.#|# $ . $ #|#   #   #|#########!"]
+data DONE = [0xFF, 0x81, 0xBD, 0xA5, 0xA5, 0xBD, 0x81, 0xFF]
+var lv = 0, x = 0, y = 0, moves = 0
+tile(T0, DONE, GREEN)
+
+fn load() {
+  cls(0)
+  msg(-1)
+  // find the level start
+  var i = 0, k = 0
+  while k < lv { if LV[i] == '!' { k++ } i++ }
+  // measure it to centre it
+  var j = i, w = 0, h = 1, cw = 0
+  while LV[j] != '!' {
+    if LV[j] == '|' { h++; cw = 0 } else { cw++; w = max(w, cw) }
+    j++
+  }
+  var ox = (10 - w) / 2, oy = (10 - h) / 2, cx = ox, cy = oy
+  for m in 0..100 { mem[m] = 0 }
+  while LV[i] != '!' {
+    var c = LV[i]
+    if c == '|' { cy++; cx = ox - 1 }
+    else if c == '#' { set(cx, cy, WALL) }
+    else if c == '.' { set(cx, cy, GOAL); mem[xy(cx, cy)] = 1 }
+    else if c == '$' { set(cx, cy, BOX) }
+    else if c == '@' { x = cx; y = cy }
+    cx++
+    i++
+  }
+  set(x, y, PLAYER)
+  moves = 0
+}
+fn floor(fx, fy) {
+  if mem[xy(fx, fy)] { return GOAL }
+  return 0
+}
+fn step(d) {
+  var nx = x + dx(d), ny = y + dy(d)
+  var c = get(nx, ny)
+  if c == WALL { return }
+  if c == BOX || c == T0 {
+    var c2 = get(nx + dx(d), ny + dy(d))
+    if c2 != 0 && c2 != GOAL { return }
+    set(nx + dx(d), ny + dy(d), c2 == GOAL ? T0 : BOX)
+    sfx(7)
+  }
+  set(x, y, floor(x, y))
+  x = nx
+  y = ny
+  set(x, y, PLAYER)
+  moves++
+}
+
+load()
+loop {
+  frame()
+  for d in 0..4 { if pressed(d) { step(d) } }
+  if pressed(B) { load() }
+  if count(BOX) == 0 {
+    score++
+    sfx(6)
+    msg("SOLVED!")
+    wait(45)
+    lv++
+    if lv == 8 { win() }
+    load()
+  }
+}

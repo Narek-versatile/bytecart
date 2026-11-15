@@ -1,0 +1,22 @@
+// @name Meteor
+// @desc Hold left/right or tap a side to dodge the falling rocks. It gets faster.
+// @medium nfc
+var x = 8, s = 8
+loop {
+  set(x, 15, 0)
+  if tick % 2 == 0 {
+    if held(LEFT) || tapped() && tapx < x { x-- }
+    if held(RIGHT) || tapped() && tapx > x { x++ }
+  }
+  x = clamp(x, 0, 15)
+  if tick % s == 0 {
+    scroll(DOWN, 0)
+    set(rnd(16), 0, ROCK)
+    set(rnd(16), 0, ROCK)
+    score++
+    if score % 20 == 0 && s > 2 { s-- }
+  }
+  if get(x, 15) != 0 { sfx(3); over() }
+  set(x, 15, SHIP)
+  frame()
+}

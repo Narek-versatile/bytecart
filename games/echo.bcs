@@ -1,0 +1,31 @@
+// @name Echo
+// @desc Watch the colours light up, then tap them back in the same order. One more each round.
+// @medium nfc
+grid(2, 2)
+data C = [RED, GREEN, BLUE, YELLOW]
+fn show(i, on) {
+  seti(i, C[i] + DIM - on * DIM)
+  if on { beep(i * 5 + 24, 8) }
+}
+for i in 0..4 { show(i, 0) }
+var n = 0
+loop {
+  mem[n] = rnd(4)
+  n++
+  wait(25)
+  for k in 0..n {
+    show(mem[k], 1)
+    wait(12)
+    show(mem[k], 0)
+    wait(5)
+  }
+  for k in 0..n {
+    while !tapped() { frame() }
+    var c = tapy * 2 + tapx
+    show(c, 1)
+    wait(6)
+    show(c, 0)
+    if c != mem[k] { over() }
+  }
+  score = n
+}

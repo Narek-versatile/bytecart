@@ -1,0 +1,26 @@
+// @name Duel
+// @desc Two players, one phone. Top half is red, bottom half is blue. When the screen turns green, tap your half first. Tap early and you lose the round.
+// @medium nfc
+var r = 0, b = 0
+loop {
+  fill(0, 0, 16, 8, RED + DIM)
+  fill(0, 8, 16, 8, BLUE + DIM)
+  num(1, 1, r)
+  num(1, 14, b)
+  wait(30)
+  var t = 20 + rnd(90), w = -1
+  while t > 0 {
+    frame()
+    t--
+    if tapped() { w = 1 - tapy / 8; t = 0 }
+  }
+  if w < 0 {
+    cls(GREEN)
+    sfx(7)
+    while !tapped() { frame() }
+    w = tapy / 8
+  }
+  if w == 0 { r++; cls(RED) } else { b++; cls(BLUE) }
+  sfx(4)
+  wait(45)
+}
