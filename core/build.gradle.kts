@@ -17,5 +17,8 @@ kotlin {
         commonTest.dependencies {
             implementation(kotlin("test"))
         }
+        jvmTest.dependencies {
+            implementation("com.google.zxing:core:3.5.4") // checks our QR encoder against a real decoder
+        }
     }
 }
