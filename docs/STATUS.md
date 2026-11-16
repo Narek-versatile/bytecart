@@ -1,7 +1,7 @@
 # Status (2026-11-15)
 
 ## Decisions (from the user)
-- Name **bytecart** everywhere (not nfc-games). Repo `github.com/Narek-versatile/bytecart` (public, not created yet).
+- Name **bytecart** everywhere (not nfc-games). Repo `github.com/Narek-versatile/bytecart` (public, created 2026-11-16, branch main).
   Site `https://narek.actcollege.am/bytecart/`, docs at `/bytecart/docs/`. nginx change approved.
 - NFC: one game per write, **raw pages, no NDEF** (max bytes: 143 coded + 1 check byte on NTAG213).
 - QR games at maximum capacity (v40-L, 2953 B). Games should be "serious"; scope is large.
@@ -17,6 +17,8 @@
 | QR encoder (Kotlin, for web) decodes in ZXing for versions 1–40 at full capacity | QrTest |
 | CLI: compile, info, dis, qr, hex, push, train, sizes; runs on Java 8 | manual runs |
 | Android APK builds (compileSdk 37, minSdk 26) and launches on SM-S926B (Android API 37), NFC on, no crash | adb install + logcat crash buffer empty + screenshot |
+| Public repo + release v0.1.0 (bytecart.apk, bytecart-cli.jar, SHA256SUMS.txt) | `gh release view v0.1.0`; `releases/latest/download/bytecart.apk` sha256 d826bf82... matches the local build |
+| `scripts/install-android.sh` (latest release, a path, or `--local`) installs on every adb device | download + no-device path checked via the raw GitHub URL; an actual install through the script NOT yet run (phone was disconnected) |
 | Real NTAG213 write + read + play on the S24+ | logcat `cc=e1101200` / `wrote 54 B (21 pages changed) to NTAG213, verified` (0.34 s), then a read opened Lights and it was played (screenshot, score 5) |
 
 Current shipped cart sizes (bytes): lights 54, meteor 65, duel 70, flap 71, echo 81, serpent 84,
@@ -39,7 +41,9 @@ dash 92 (NFC, cap 144); mines 254, stackfall 272, brickfall 344, crates 350, dep
 - `nfc_tech.xml` now filters on NfcA alone (INFERRED: the app may appear in the chooser for other NfcA tags when closed).
 
 ## Known gaps
-- Website (landing, playground, docs) not started. GitHub repo, CI, release, deploy not started.
+- Website (landing, playground, docs) not started. CI and deploy not started. Release is 0.1.0 (format not frozen);
+  v1.0.0 comes after PLAN C5. The APK is signed with the local debug key (~/.android/debug.keystore on this Mac):
+  build future releases here or switch to a real key (users would then need to uninstall once).
 - No flagship QR game that uses most of the 2953 B. NFC games use 54–92 of 144 B (room to enrich).
 - Priors trained on 12 games; must be retrained once after games are final (see CLAUDE.md rule 1).
 - Kotlin/JS dist is UMD with globals `kotlin-kotlin-stdlib` and `bytecart:core` (~420 KB unminified).
